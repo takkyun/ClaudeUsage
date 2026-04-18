@@ -108,7 +108,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             color = NSColor(red: 1.0, green: 0.23, blue: 0.19, alpha: 1.0)
         }
         button.image = makeSparkIcon(color: color)
-        button.title = usageManager.snapshot == nil ? " –" : " \(percent)%"
     }
 
     private func makeSparkIcon(color: NSColor) -> NSImage {
