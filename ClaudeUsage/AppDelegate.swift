@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var refreshTimer: Timer?
     private var eventMonitor: Any?
+    private var loginWindow: LoginWindowController?
     let usageManager = UsageManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -23,7 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 360, height: 440)
         popover.contentViewController = NSHostingController(
-            rootView: UsageView(manager: usageManager)
+            rootView: UsageView(
+                manager: usageManager,
+                onSignIn: { [weak self] in self?.presentLogin() }
+            )
         )
 
         usageManager.onSnapshotUpdate = { [weak self] in
@@ -93,6 +97,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func quit() {
         NSApp.terminate(nil)
+    }
+
+    private func presentLogin() {
+        if let existing = loginWindow {
+            NSApp.activate(ignoringOtherApps: true)
+            existing.window?.makeKeyAndOrderFront(nil)
+            return
+        }
+        let wc = LoginWindowController { [weak self] header in
+            guard let self else { return }
+            self.usageManager.saveCookie(header)
+            Task { await self.usageManager.refresh() }
+            self.loginWindow = nil
+        }
+        loginWindow = wc
+        NSApp.activate(ignoringOtherApps: true)
+        wc.showWindow(nil)
+        wc.window?.makeKeyAndOrderFront(nil)
     }
 
     func updateStatusIcon() {
