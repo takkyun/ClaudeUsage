@@ -1,42 +1,39 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+Guidance for Claude Code when working in this repository.
 
 ## Project
 
-Claude.ai の利用量を macOS ウィジェット (WidgetKit) として表示するアプリ。
+A macOS app that shows Claude.ai usage in a menu bar popover and a WidgetKit widget.
 
-- **メインアプリ (`ClaudeUsage/`)**: Cookie を使って Claude.ai API を定期ポーリングし、App Groups 経由でデータを共有。メニューバー常駐 (`LSUIElement` / `.accessory`)。
-- **ウィジェット拡張 (`ClaudeUsageWidget/`)**: App Groups から読むだけ。自身で API を叩かない。
+- **Main app (`ClaudeUsage/`)**: polls the Claude.ai API every 5 minutes using a session cookie and shares results via App Groups. Menu bar resident (`.accessory`). Provides a WebView-based sign-in flow.
+- **Widget extension (`ClaudeUsageWidget/`)**: reads only from the App Group; never calls the API itself.
 - **App Group ID**: `group.com.serendipitynz.ClaudeUsage`
-- **Shared UserDefaults キー**:
-  - `usage_snapshot_v1` — `UsageSnapshot` を JSON エンコードして保存
-  - `claude_session_cookie` — full cookie string
+- **Shared UserDefaults keys**:
+  - `usage_snapshot_v1` — `UsageSnapshot` encoded as JSON
+  - `claude_session_cookie` — the full HTTP `Cookie:` header string
 
 ## Reference implementation
 
-`reference-claudeusagebar/app/ClaudeUsageBar.swift` は元になったメニューバーアプリ。
-API 呼び出し (エンドポイント・ヘッダー・レスポンス形) はこれを踏襲する。
-詳細は `plan.md` 参照。
+`reference-claudeusagebar/app/ClaudeUsageBar.swift` is the menu bar app this project was inspired by. API-level details (endpoints, headers, response shape) follow that implementation. See `docs/design.md`.
 
-主要ポイント:
+Key points:
 - **Endpoint**: `GET https://claude.ai/api/organizations/{orgId}/usage`
-- **Auth**: ユーザーが DevTools でコピーした full cookie 文字列をそのまま `Cookie:` ヘッダーに載せる
-- **orgId**: cookie 内 `lastActiveOrg=<UUID>` から取る (無ければ `/api/bootstrap` にフォールバック)
-- **Response**: `five_hour` / `seven_day` / `seven_day_sonnet`(任意) の各 `utilization` (0-100) と `resets_at` (ISO8601 小数秒)
-- **Refresh**: 5 分ごと
+- **Auth**: the HTTP `Cookie:` header string. Obtained either from the in-app WebView sign-in or pasted from DevTools.
+- **orgId**: extracted from `lastActiveOrg=<UUID>` in the cookie; falls back to `/api/bootstrap` if absent.
+- **Response**: `five_hour` / `seven_day` / `seven_day_sonnet` (optional) each with `utilization` (0-100) and `resets_at` (ISO8601 with fractional seconds).
+- **Refresh**: every 5 minutes.
 
 ## Architecture rules
 
-- ウィジェット側からは絶対に API を呼ばない (Cookie 認証の負荷とバックグラウンド制約のため)。メインアプリが fetch → `SharedStore.save` → `WidgetCenter.shared.reloadAllTimelines()`。
-- Cookie は App Group UserDefaults に置く。ウィジェットもメインアプリも同じ suite を見る。
-- エラーや空データは `UsageSnapshot.errorMessage` に載せて共有し、ウィジェット側で表示分岐。
+- The widget extension never hits the Claude.ai API (cookie-auth load and background-execution constraints). The main app fetches, calls `SharedStore.save`, then `WidgetCenter.shared.reloadAllTimelines()`.
+- Cookies live in the App Group UserDefaults. Both targets read the same suite.
+- Errors and empty data surface as `UsageSnapshot.errorMessage`, which the widget and popover branch on for display.
 
 ## Build
 
-Xcode プロジェクト (`ClaudeUsage.xcodeproj`)。`xcodebuild -scheme ClaudeUsage` でビルド。
-初回セットアップ時は両ターゲットに App Group entitlement を追加すること。
+Xcode project (`ClaudeUsage.xcodeproj`). Build with `xcodebuild -scheme ClaudeUsage`. Both targets need the App Group entitlement `group.com.serendipitynz.ClaudeUsage`.
 
 ## Current status
 
-`plan.md` のチェックリストで進捗を管理。MVP では通知 / グローバルショートカット (Cmd+U) は実装せず、参考実装からは省略する。
+MVP complete. Out-of-scope items are listed in `docs/design.md`.
