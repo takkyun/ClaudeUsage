@@ -1,3 +1,7 @@
+// API call logic (endpoints, headers, ISO8601 parsing, lastActiveOrg cookie
+// extraction) adapted from ClaudeUsageBar by Artzainnn (MIT)
+// https://github.com/Artzainnn/claudeusagebar
+
 import Foundation
 
 enum ClaudeUsageAPIError: Error, LocalizedError {
