@@ -19,7 +19,25 @@ enum ClaudeUsageAPIError: Error, LocalizedError {
 }
 
 enum ClaudeUsageAPI {
+    nonisolated static func normalizeCookie(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.contains("\t") && !trimmed.contains("\n") {
+            return trimmed
+        }
+        var pairs: [String] = []
+        for line in trimmed.split(whereSeparator: { $0.isNewline }) {
+            let cols = line.split(separator: "\t", omittingEmptySubsequences: false)
+            guard cols.count >= 2 else { continue }
+            let name = cols[0].trimmingCharacters(in: .whitespaces)
+            let value = cols[1].trimmingCharacters(in: .whitespaces)
+            guard !name.isEmpty, !value.isEmpty else { continue }
+            pairs.append("\(name)=\(value)")
+        }
+        return pairs.joined(separator: "; ")
+    }
+
     nonisolated static func fetchOrganizationId(cookie: String) async throws -> String {
+        let cookie = normalizeCookie(cookie)
         for part in cookie.components(separatedBy: ";") {
             let trimmed = part.trimmingCharacters(in: .whitespaces)
             if trimmed.hasPrefix("lastActiveOrg=") {
@@ -31,7 +49,7 @@ enum ClaudeUsageAPI {
             throw ClaudeUsageAPIError.invalidResponse
         }
         var request = URLRequest(url: url)
-        request.setValue("sessionKey=\(cookie)", forHTTPHeaderField: "Cookie")
+        request.setValue(cookie, forHTTPHeaderField: "Cookie")
 
         let (data, _) = try await URLSession.shared.data(for: request)
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -44,6 +62,7 @@ enum ClaudeUsageAPI {
     }
 
     nonisolated static func fetchUsage(cookie: String, orgId: String) async throws -> UsageSnapshot {
+        let cookie = normalizeCookie(cookie)
         guard let url = URL(string: "https://claude.ai/api/organizations/\(orgId)/usage") else {
             throw ClaudeUsageAPIError.invalidResponse
         }
