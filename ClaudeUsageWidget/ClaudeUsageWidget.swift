@@ -130,8 +130,17 @@ private struct MetricBar: View {
                     .monospacedDigit()
                     .foregroundStyle(color(for: utilization))
             }
-            ProgressView(value: min(utilization / 100, 1.0))
-                .tint(color(for: utilization))
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.35))
+                    Capsule()
+                        .fill(color(for: utilization))
+                        .frame(width: geo.size.width * min(utilization / 100, 1.0))
+                        .widgetAccentable()
+                }
+            }
+            .frame(height: 8)
         }
     }
 }
