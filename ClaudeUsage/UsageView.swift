@@ -2,8 +2,8 @@ import SwiftUI
 
 struct UsageView: View {
     @ObservedObject var manager: UsageManager
+    let onSignIn: () -> Void
     @State private var cookieInput: String = ""
-    @State private var showingCookie: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -54,7 +54,7 @@ struct UsageView: View {
                     .disabled(manager.isLoading)
                 }
             } else {
-                Text("Paste your Claude.ai session cookie to get started.")
+                Text("Sign in to view your Claude.ai usage.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
@@ -62,22 +62,27 @@ struct UsageView: View {
 
             Divider()
 
-            Button(
-                showingCookie
-                    ? "Hide Cookie Input"
-                    : (manager.cookie.isEmpty ? "Set Session Cookie" : "Update Cookie")
-            ) {
-                if !showingCookie {
-                    cookieInput = manager.cookie
+            HStack {
+                Button(manager.cookie.isEmpty ? "Sign in with Claude.ai" : "Re-sign in") {
+                    onSignIn()
                 }
-                showingCookie.toggle()
-            }
-            .buttonStyle(.borderless)
-            .font(.caption)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
 
-            if showingCookie {
-                cookieInputSection
+                if !manager.cookie.isEmpty {
+                    Button("Sign out") {
+                        manager.clearCookie()
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
             }
+
+            DisclosureGroup("Advanced: paste cookie manually") {
+                cookieInputSection
+                    .padding(.top, 4)
+            }
+            .font(.caption)
 
             HStack {
                 Spacer()
@@ -103,21 +108,11 @@ struct UsageView: View {
             HStack {
                 Button("Save & Fetch") {
                     manager.saveCookie(cookieInput)
-                    showingCookie = false
                     Task { await manager.refresh() }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 .disabled(cookieInput.isEmpty)
-
-                if !manager.cookie.isEmpty {
-                    Button("Clear") {
-                        manager.clearCookie()
-                        cookieInput = ""
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
             }
         }
         .padding(8)
