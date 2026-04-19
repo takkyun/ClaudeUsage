@@ -73,7 +73,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openPopover() {
         guard let button = statusItem.button else { return }
+        NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        popover.contentViewController?.view.window?.makeKey()
         eventMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
