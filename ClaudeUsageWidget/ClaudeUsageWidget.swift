@@ -30,7 +30,7 @@ struct ClaudeUsageWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: UsageProvider()) { entry in
             ClaudeUsageWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(.regularMaterial, for: .widget)
         }
         .configurationDisplayName("Claude Usage")
         .description("Shows your current Claude.ai usage.")
