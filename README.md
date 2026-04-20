@@ -25,6 +25,17 @@ The popover has an **Advanced: paste cookie manually** disclosure group for past
 - The `Cookie:` request-header value (DevTools → Network → any `/api/...` request → Request Headers).
 - The DevTools **Application → Cookies** table paste (tab-separated rows, all rows selected).
 
+### Widget missing from the gallery
+
+If the Claude Usage widget doesn't appear in the widget gallery after launching the app:
+
+1. Open **System Settings → General → Login Items & Extensions → Widgets** and make sure **ClaudeUsage** is turned on.
+2. If it still doesn't show, run the following in Terminal and re-open the widget gallery:
+   ```sh
+   pluginkit -e use -i com.serendipitynz.ClaudeUsage.ClaudeUsageWidget
+   killall chronod
+   ```
+
 ## Architecture
 
 - **Main app (`ClaudeUsage/`)**: polls Claude.ai, writes to the App Group `group.com.serendipitynz.ClaudeUsage`, calls `WidgetCenter.reloadAllTimelines()` after each fetch.
