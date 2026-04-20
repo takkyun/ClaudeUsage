@@ -1,3 +1,4 @@
 .claude
 reference-claudeusagebar
 ClaudeUsage.xcodeproj/xcuserdata
+build/
